@@ -167,6 +167,7 @@ namespace LyncBlinkBridge
                         newColor = colorAvailable;
                         break;
                     case ContactAvailability.Away:
+                    case ContactAvailability.TemporarilyAway:
                         newColor = colorAway;
                         break;
                     case ContactAvailability.DoNotDisturb:
