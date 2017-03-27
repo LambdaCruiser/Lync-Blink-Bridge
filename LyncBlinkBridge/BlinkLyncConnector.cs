@@ -10,10 +10,22 @@ using System.Management;
 using System.Diagnostics;
 using System.Threading;
 using System.Drawing;
+using Quartz;
+using Quartz.Impl;
 
 namespace LyncBlinkBridge
 {
-    class BlinkLyncConnectorAppContext : ApplicationContext
+    public class HelloJob : IJob
+    {
+        private Rgb colorMeeting = new Rgb(255, 255, 255);
+
+        public void Execute(IJobExecutionContext context)
+        {
+            BlinkLyncConnectorAppContext.instance.SetBlink1State(colorMeeting);
+        }
+    }
+
+    public class BlinkLyncConnectorAppContext : ApplicationContext
     {
         private NotifyIcon trayIcon;
         private ContextMenuStrip trayIconContextMenu;
@@ -29,6 +41,8 @@ namespace LyncBlinkBridge
         private Rgb colorBusy = new Rgb(150, 0, 0);
         private Rgb colorAway = new Rgb(150, 150, 0);
         private Rgb colorOff = new Rgb(0, 0, 0);
+        public static BlinkLyncConnectorAppContext instance;
+        private IScheduler sched;
 
 
         public BlinkLyncConnectorAppContext()
@@ -49,6 +63,27 @@ namespace LyncBlinkBridge
             // Watch for USB Changes, try to monitor blink plugin/removal
             InitializeUSBWatcher();
 
+            InitializeScheduler();
+            instance = this;
+        }
+
+        private void InitializeScheduler()
+        {
+            ISchedulerFactory schedFact = new StdSchedulerFactory();
+            sched = schedFact.GetScheduler();
+            sched.Start();
+
+            IJobDetail job = JobBuilder.Create<HelloJob>()
+                .WithIdentity("myJob", "group1")
+                .Build();
+
+            ITrigger trigger = TriggerBuilder.Create()
+              .WithIdentity("myTrigger", "group1")
+              .StartNow()
+              .WithSchedule(CronScheduleBuilder.DailyAtHourAndMinute(9, 15))
+              .Build();
+
+            sched.ScheduleJob(job, trigger);
         }
 
         private bool InitializeBlink1()
@@ -184,7 +219,7 @@ namespace LyncBlinkBridge
             }
         }
 
-        void SetBlink1State(Rgb color)
+        public void SetBlink1State(Rgb color)
         {
             bool setColorResult = false;
 
@@ -265,6 +300,8 @@ namespace LyncBlinkBridge
 
         private void OnApplicationExit(object sender, EventArgs e)
         {
+            sched.Shutdown();
+
             //Cleanup so that the icon will be removed when the application is closed
             trayIcon.Visible = false;
 

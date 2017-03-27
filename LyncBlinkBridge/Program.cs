@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Windows.Forms;
+using Quartz;
+using Quartz.Impl;
 
 namespace LyncBlinkBridge
 {
