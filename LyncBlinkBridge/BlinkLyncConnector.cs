@@ -15,16 +15,6 @@ using Quartz.Impl;
 
 namespace LyncBlinkBridge
 {
-    public class HelloJob : IJob
-    {
-        private Rgb colorMeeting = new Rgb(255, 255, 255);
-
-        public void Execute(IJobExecutionContext context)
-        {
-            BlinkLyncConnectorAppContext.instance.SetBlink1State(colorMeeting);
-        }
-    }
-
     public class BlinkLyncConnectorAppContext : ApplicationContext
     {
         private NotifyIcon trayIcon;
@@ -73,7 +63,7 @@ namespace LyncBlinkBridge
             sched = schedFact.GetScheduler();
             sched.Start();
 
-            IJobDetail job = JobBuilder.Create<HelloJob>()
+            IJobDetail job = JobBuilder.Create<StandupJob>()
                 .WithIdentity("myJob", "group1")
                 .Build();
 
