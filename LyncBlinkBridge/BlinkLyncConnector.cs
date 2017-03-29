@@ -34,6 +34,8 @@ namespace LyncBlinkBridge
         public static BlinkLyncConnectorAppContext instance;
         private IScheduler sched;
 
+        KeyboardHook busyHook = new KeyboardHook();
+        KeyboardHook availableHook = new KeyboardHook();
 
         public BlinkLyncConnectorAppContext()
         {
@@ -55,6 +57,23 @@ namespace LyncBlinkBridge
 
             InitializeScheduler();
             instance = this;
+
+            busyHook.KeyPressed += new EventHandler<KeyPressedEventArgs>(busyHook_KeyPressed);
+            busyHook.RegisterHotKey(ModifierKeys.Control | ModifierKeys.Alt, Keys.D1);
+
+            availableHook.KeyPressed += new EventHandler<KeyPressedEventArgs>(availableHook_KeyPressed);
+            availableHook.RegisterHotKey(ModifierKeys.Control | ModifierKeys.Alt, Keys.D2);
+        }
+
+        private void busyHook_KeyPressed(object sender, KeyPressedEventArgs e)
+        {
+            SetBlink1State(colorBusy);
+        }
+
+
+        private void availableHook_KeyPressed(object sender, KeyPressedEventArgs e)
+        {
+            SetBlink1State(colorAvailable);
         }
 
         private void InitializeScheduler()
@@ -290,6 +309,8 @@ namespace LyncBlinkBridge
 
         private void OnApplicationExit(object sender, EventArgs e)
         {
+            busyHook.Dispose();
+            availableHook.Dispose();
             sched.Shutdown();
 
             //Cleanup so that the icon will be removed when the application is closed
