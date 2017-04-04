@@ -1,5 +1,6 @@
 ﻿
 using System;
+using System.Collections.Generic;
 using System.Windows.Forms;
 
 using Microsoft.Lync.Model;
@@ -67,13 +68,22 @@ namespace LyncBlinkBridge
 
         private void busyHook_KeyPressed(object sender, KeyPressedEventArgs e)
         {
-            SetBlink1State(colorBusy);
+            SetLyncStatus(ContactAvailability.Busy);
         }
-
 
         private void availableHook_KeyPressed(object sender, KeyPressedEventArgs e)
         {
-            SetBlink1State(colorAvailable);
+            SetLyncStatus(ContactAvailability.Free);
+        }
+
+        private void SetLyncStatus(ContactAvailability availability)
+        {
+            lyncClient.Self.BeginPublishContactInformation(
+                new Dictionary<PublishableContactInformationType, object>()
+                {
+                    {PublishableContactInformationType.Availability, availability}
+                },
+                null, null);
         }
 
         private void InitializeScheduler()
