@@ -32,7 +32,7 @@ namespace LyncBlinkBridge
         private Rgb colorBusy = new Rgb(150, 0, 0);
         private Rgb colorAway = new Rgb(150, 150, 0);
         private Rgb colorOff = new Rgb(0, 0, 0);
-        public static BlinkLyncConnectorAppContext instance;
+        public static BlinkLyncConnectorAppContext Instance;
         private IScheduler sched;
 
         KeyboardHook busyHook = new KeyboardHook();
@@ -57,7 +57,7 @@ namespace LyncBlinkBridge
             InitializeUSBWatcher();
 
             InitializeScheduler();
-            instance = this;
+            Instance = this;
 
             busyHook.KeyPressed += new EventHandler<KeyPressedEventArgs>(busyHook_KeyPressed);
             busyHook.RegisterHotKey(ModifierKeys.Control | ModifierKeys.Alt, Keys.D1);
