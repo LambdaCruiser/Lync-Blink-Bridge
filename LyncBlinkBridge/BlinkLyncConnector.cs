@@ -18,6 +18,8 @@ namespace LyncBlinkBridge
 {
     public class BlinkLyncConnectorAppContext : ApplicationContext
     {
+        public static BlinkLyncConnectorAppContext Instance;
+
         private NotifyIcon trayIcon;
         private ContextMenuStrip trayIconContextMenu;
 
@@ -32,7 +34,7 @@ namespace LyncBlinkBridge
         private Rgb colorBusy = new Rgb(150, 0, 0);
         private Rgb colorAway = new Rgb(150, 150, 0);
         private Rgb colorOff = new Rgb(0, 0, 0);
-        public static BlinkLyncConnectorAppContext Instance;
+        
         private IScheduler sched;
 
         KeyboardHook busyHook = new KeyboardHook();
@@ -66,13 +68,17 @@ namespace LyncBlinkBridge
             availableHook.RegisterHotKey(ModifierKeys.Control | ModifierKeys.Alt, Keys.D2);
         }
 
+        public bool IgnoreLyncStatusChangesMode { get; set; }
+
         private void busyHook_KeyPressed(object sender, KeyPressedEventArgs e)
         {
+            IgnoreLyncStatusChangesMode = false;
             SetLyncStatus(ContactAvailability.Busy);
         }
 
         private void availableHook_KeyPressed(object sender, KeyPressedEventArgs e)
         {
+            IgnoreLyncStatusChangesMode = false;
             SetLyncStatus(ContactAvailability.Free);
         }
 
@@ -92,15 +98,27 @@ namespace LyncBlinkBridge
             sched = schedFact.GetScheduler();
             sched.Start();
 
-            IJobDetail job = JobBuilder.Create<StandupJob>()
-                .WithIdentity("myJob", "group1")
+            IJobDetail job = JobBuilder.Create<StandupBeginJob>()
+                .WithIdentity("standupBeginJob", "group1")
                 .Build();
 
             ITrigger trigger = TriggerBuilder.Create()
-              .WithIdentity("myTrigger", "group1")
+              .WithIdentity("standupBeginTrigger", "group1")
               .StartNow()
               .WithSchedule(CronScheduleBuilder.DailyAtHourAndMinute(9, 15))
               .Build();
+
+            sched.ScheduleJob(job, trigger);
+
+            job = JobBuilder.Create<StandupEndJob>()
+                .WithIdentity("standupEndJob", "group2")
+                .Build();
+
+            trigger = TriggerBuilder.Create()
+                .WithIdentity("standupEndTrigger", "group2")
+                .StartNow()
+                .WithSchedule(CronScheduleBuilder.DailyAtHourAndMinute(9, 30))
+                .Build();
 
             sched.ScheduleJob(job, trigger);
         }
@@ -207,6 +225,11 @@ namespace LyncBlinkBridge
         /// </summary>
         void SetCurrentContactState()
         {
+            if (IgnoreLyncStatusChangesMode)
+            {
+                return;
+            }
+
             Rgb newColor = colorOff;
             if (lyncClient.State == ClientState.SignedIn)
             {
